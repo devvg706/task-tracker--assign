@@ -1,57 +1,62 @@
+// backend/index.js
 const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+require('dotenv').config();
+
+const { connectDB } = require('./config/database');
+const userRoutes = require('./routes/authRoutes');
+const taskRoutes = require('./routes/taskRoutes');
+
 const app = express();
-const cors = require("cors");
-const cookieParser = require("cookie-parser");
-require("dotenv").config();
-
-const { connectDB } = require("./config/database");
-const userRoutes = require("./routes/authRoutes");
-const taskRoutes = require("./routes/taskRoutes");
-
 const PORT = process.env.PORT || 4000;
 
-// connect DB
+// Connect to DB
 connectDB();
 
-// --- CORS setup ---
-// Allowed origins come from an env var (comma separated) or fallback to localhost + your Vercel URL
-// Set CLIENT_ORIGINS on Render to: https://your-frontend.vercel.app,http://localhost:3000
-const CLIENT_ORIGINS = (process.env.CLIENT_ORIGINS || 'http://localhost:3000').split(',');
+// ---------- CORS ----------
+// Allowed origins come from env var CLIENT_ORIGINS (comma-separated),
+// fallback to localhost for dev.
+const CLIENT_ORIGINS = (process.env.CLIENT_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow requests with no origin (like curl, mobile apps, server-to-server)
+    // Requests from tools like curl or mobile apps may have no origin — allow them
     if (!origin) return callback(null, true);
     if (CLIENT_ORIGINS.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS: ' + origin));
+      return callback(null, true);
     }
+    return callback(new Error('Not allowed by CORS: ' + origin));
   },
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,
   optionsSuccessStatus: 204
 };
 
+// Apply CORS and make sure preflight is handled
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // enable preflight for all routes
+app.options('*', cors(corsOptions));
 
-// middleware
+// ---------- Middlewares ----------
 app.use(express.json());
 app.use(cookieParser());
 
-// routes
-app.use("/api/v1/auth", userRoutes);
-app.use("/api/v1/tasks", taskRoutes);
+// ---------- Routes ----------
+app.use('/api/v1/auth', userRoutes);
+app.use('/api/v1/tasks', taskRoutes);
 
-app.get("/", (req, res) => {
+app.get('/', (req, res) => {
   return res.status(200).json({
-    message: "Welcome to the E-Learning Platform",
-    success: true,
+    message: 'Welcome to the E-Learning Platform',
+    success: true
   });
 });
 
+// ---------- Start ----------
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
