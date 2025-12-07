@@ -24,7 +24,7 @@ const CLIENT_ORIGINS = (process.env.CLIENT_ORIGINS || 'http://localhost:3000')
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Requests from tools like curl or mobile apps may have no origin — allow them
+    // allow requests with no origin (curl, mobile apps, same-origin server requests)
     if (!origin) return callback(null, true);
     if (CLIENT_ORIGINS.indexOf(origin) !== -1) {
       return callback(null, true);
@@ -37,9 +37,8 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-// Apply CORS and make sure preflight is handled
+// Apply CORS globally (this handles preflight OPTIONS for your real routes)
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // ---------- Middlewares ----------
 app.use(express.json());
